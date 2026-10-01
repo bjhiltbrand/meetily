@@ -137,6 +137,11 @@ pub struct MeetingTranscript {
     pub audio_end_time: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<f64>,
+    // Speaker diarization: label ("speaker_1") and resolved display name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speaker: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speaker_name: Option<String>,
 }
 
 /// Meeting metadata without transcripts (for pagination)
@@ -868,6 +873,8 @@ pub async fn api_get_meeting_transcripts<R: Runtime>(
                 total_count
             );
 
+            let speaker_names = crate::diarization::load_speaker_names(pool, &meeting_id).await;
+
             // Convert Transcript to MeetingTranscript
             let meeting_transcripts = transcripts
                 .into_iter()
@@ -878,6 +885,8 @@ pub async fn api_get_meeting_transcripts<R: Runtime>(
                     audio_start_time: t.audio_start_time,
                     audio_end_time: t.audio_end_time,
                     duration: t.duration,
+                    speaker_name: crate::diarization::resolve_speaker_name(&speaker_names, &t.speaker),
+                    speaker: t.speaker,
                 })
                 .collect::<Vec<_>>();
 

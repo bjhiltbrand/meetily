@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { RecordingStatusBar } from "./RecordingStatusBar";
 import { motion, AnimatePresence } from "framer-motion";
 import { TranscriptSegmentData } from "@/types";
+import { speakerColorClass } from "@/lib/speakers";
 
 export interface VirtualizedTranscriptViewProps {
     /** Transcript segments to display */
@@ -63,6 +64,15 @@ function cleanStopWords(text: string): string {
     return cleanedText.replace(/\s+/g, ' ').trim();
 }
 
+// Show a speaker label on the first segment and whenever the speaker changes
+function isSpeakerChange(segments: TranscriptSegmentData[], index: number): boolean {
+    const current = segments[index];
+    if (!current?.speakerName) return false;
+    if (index === 0) return true;
+    const prev = segments[index - 1];
+    return prev?.speaker !== current.speaker || prev?.speakerName !== current.speakerName;
+}
+
 // Memoized transcript segment component
 const TranscriptSegment = memo(function TranscriptSegment({
     id,
@@ -71,6 +81,9 @@ const TranscriptSegment = memo(function TranscriptSegment({
     confidence,
     isStreaming,
     showConfidence,
+    speaker,
+    speakerName,
+    showSpeaker = false,
 }: {
     id: string;
     timestamp: number;
@@ -78,11 +91,22 @@ const TranscriptSegment = memo(function TranscriptSegment({
     confidence?: number;
     isStreaming: boolean;
     showConfidence: boolean;
+    speaker?: string;
+    speakerName?: string;
+    /** Show the speaker label (only when the speaker changes) */
+    showSpeaker?: boolean;
 }) {
     const displayText = cleanStopWords(text) || (text.trim() === '' ? '[Silence]' : text);
 
     return (
         <div id={`segment-${id}`} className="mb-3">
+            {showSpeaker && speakerName && (
+                <div className="ml-[58px] mb-1">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${speakerColorClass(speaker)}`}>
+                        {speakerName}
+                    </span>
+                </div>
+            )}
             <div className="flex items-start gap-2">
                 <Tooltip>
                     <TooltipTrigger>
@@ -296,6 +320,9 @@ export const VirtualizedTranscriptView: React.FC<VirtualizedTranscriptViewProps>
                                         confidence={segment.confidence}
                                         isStreaming={isStreaming}
                                         showConfidence={showConfidence}
+                                        speaker={segment.speaker}
+                                        speakerName={segment.speakerName}
+                                        showSpeaker={isSpeakerChange(segments, virtualRow.index)}
                                     />
                                 </div>
                             );
@@ -335,7 +362,7 @@ export const VirtualizedTranscriptView: React.FC<VirtualizedTranscriptViewProps>
                 // Simple rendering for small lists (better animations)
                 <>
                     <div className="space-y-1">
-                        {segments.map((segment) => {
+                        {segments.map((segment, index) => {
                             const isStreaming = streamingSegmentId === segment.id;
 
                             return (
@@ -352,6 +379,9 @@ export const VirtualizedTranscriptView: React.FC<VirtualizedTranscriptViewProps>
                                         confidence={segment.confidence}
                                         isStreaming={isStreaming}
                                         showConfidence={showConfidence}
+                                        speaker={segment.speaker}
+                                        speakerName={segment.speakerName}
+                                        showSpeaker={isSpeakerChange(segments, index)}
                                     />
                                 </motion.div>
                             );

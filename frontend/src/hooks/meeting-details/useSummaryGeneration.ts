@@ -11,6 +11,7 @@ import { useSidebar } from '@/components/Sidebar/SidebarProvider';
 import { invoke as invokeTauri } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import Analytics from '@/lib/analytics';
+import { withSpeaker } from '@/lib/speakers';
 
 import {
   detectAndCacheSummaryLanguage,
@@ -444,9 +445,9 @@ export function useSummaryGeneration({
 
     return {
       transcriptText: allTranscripts
-        .map((transcript) => `${formatTime(transcript.audio_start_time, transcript.timestamp)} ${transcript.text}`)
+        .map((transcript) => `${formatTime(transcript.audio_start_time, transcript.timestamp)} ${withSpeaker(transcript.text, transcript.speaker_name)}`)
         .join('\n'),
-      transcriptTexts: allTranscripts.map((transcript) => transcript.text),
+      transcriptTexts: allTranscripts.map((transcript) => withSpeaker(transcript.text, transcript.speaker_name)),
     };
   }, []);
 

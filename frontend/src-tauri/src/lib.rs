@@ -41,6 +41,7 @@ pub mod audio;
 pub mod config;
 pub mod console_utils;
 pub mod database;
+pub mod diarization;
 pub mod notifications;
 pub mod ollama;
 pub mod onboarding;
@@ -824,6 +825,13 @@ pub fn run() {
             audio::retranscription::start_retranscription_command,
             audio::retranscription::cancel_retranscription_command,
             audio::retranscription::is_retranscription_in_progress_command,
+            diarization::commands::start_diarization_command,
+            diarization::commands::cancel_diarization_command,
+            diarization::commands::is_diarization_in_progress_command,
+            diarization::commands::get_meeting_speakers_command,
+            diarization::commands::rename_speaker_command,
+            diarization::commands::set_transcript_speaker_command,
+            diarization::commands::is_diarization_model_ready_command,
             // Import audio commands
             audio::import::select_and_validate_audio_command,
             audio::import::validate_audio_file_command,

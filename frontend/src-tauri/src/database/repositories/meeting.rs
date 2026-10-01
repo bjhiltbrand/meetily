@@ -82,6 +82,8 @@ impl MeetingsRepository {
 
             transaction.commit().await?;
 
+            let speaker_names = crate::diarization::load_speaker_names(pool, meeting_id).await;
+
             // Convert Transcript to MeetingTranscript
             let meeting_transcripts = transcripts
                 .into_iter()
@@ -92,6 +94,8 @@ impl MeetingsRepository {
                     audio_start_time: t.audio_start_time,
                     audio_end_time: t.audio_end_time,
                     duration: t.duration,
+                    speaker_name: crate::diarization::resolve_speaker_name(&speaker_names, &t.speaker),
+                    speaker: t.speaker,
                 })
                 .collect::<Vec<_>>();
 
@@ -258,7 +262,12 @@ async fn delete_meeting_with_transaction(
         .execute(&mut *transaction)
         .await?;
 
-    // 3. Delete from transcripts
+    // 3. Delete speaker names and transcripts
+    sqlx::query("DELETE FROM meeting_speakers WHERE meeting_id = ?")
+        .bind(meeting_id)
+        .execute(&mut *transaction)
+        .await?;
+
     sqlx::query("DELETE FROM transcripts WHERE meeting_id = ?")
         .bind(meeting_id)
         .execute(&mut *transaction)
